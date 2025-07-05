@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev:client": "vite --config vite.config.ts",
+    "dev:client:open": "vite --config vite.config.ts --open",
     "dev:server": "ts-node-dev --respawn --transpile-only -r tsconfig-paths/register server/index.ts",
     "dev": "npm run dev:client & npm run dev:server",
     "build:client": "vite build --config vite.config.ts",
