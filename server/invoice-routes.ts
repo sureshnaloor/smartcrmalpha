@@ -79,7 +79,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerQuotationRoutes(app);
 
   // Configure session middleware
-  app.use(session({
+  const sessionConfig: any = {
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
     saveUninitialized: false,
@@ -88,7 +88,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
-  }));
+  };
+
+  // Use file store in production to avoid memory leaks
+  if (process.env.NODE_ENV === 'production') {
+    const FileStore = require('session-file-store')(session);
+    sessionConfig.store = new FileStore({
+      path: './sessions',
+      ttl: 86400, // 24 hours
+      reapInterval: 3600 // 1 hour
+    });
+  }
+
+  app.use(session(sessionConfig));
 
   // Use sessions
   app.use((req: Request & { session?: session.Session & { userId?: number } }, res, next) => {
@@ -521,7 +533,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add items to invoice
       const createdItems = [];
       for (const item of items) {
-        const itemData = handleValidation(insertInvoiceItemSchema, {
+        const itemData = handleValidation<InsertInvoiceItem>(insertInvoiceItemSchema, {
           ...item,
           invoiceId
         });
