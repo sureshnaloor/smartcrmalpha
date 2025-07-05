@@ -11,6 +11,7 @@ import {
   companyTerms,
   documents,
   materialUsage,
+  invoiceTemplates,
   MasterItem,
   InsertMasterItem,
   CompanyItem,
@@ -31,6 +32,8 @@ import {
   InsertQuotationTerm,
   MaterialUsage,
   InsertMaterialUsage,
+  InvoiceTemplate,
+  InsertInvoiceTemplate,
   clients,
   Client
 } from "@shared/schema";
@@ -939,5 +942,26 @@ export class QuotationStorage extends DatabaseStorage {
         [users.materialRecordsUsed.name]: currentUsage + 1
       })
       .where(eq(users.id, userId));
+  }
+
+  // ==================
+  // Invoice template methods (inherited from DatabaseStorage)
+  // ==================
+  async getInvoiceTemplates(includesPremium: boolean = true, type?: string): Promise<InvoiceTemplate[]> {
+    let conditions = [];
+    
+    if (!includesPremium) {
+      conditions.push(eq(invoiceTemplates.isPremium, false));
+    }
+    
+    if (type) {
+      conditions.push(eq(invoiceTemplates.type, type));
+    }
+    
+    if (conditions.length > 0) {
+      return await db.select().from(invoiceTemplates).where(and(...conditions));
+    } else {
+      return await db.select().from(invoiceTemplates);
+    }
   }
 }

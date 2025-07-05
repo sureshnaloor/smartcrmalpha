@@ -33,10 +33,20 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'healthy' });
-});
+  // Health check endpoint
+  app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'healthy' });
+  });
+
+  // Development mode: redirect non-API routes to Vite dev server
+  if (process.env.NODE_ENV !== 'production') {
+    app.get('*', (req, res, next) => {
+      if (!req.path.startsWith('/api')) {
+        return res.redirect(`http://localhost:5173${req.path}`);
+      }
+      next();
+    });
+  }
 
 // Initialize database connection
 const pool = new Pool({
@@ -93,15 +103,18 @@ app.use((req, res, next) => {
 
   const server = await registerRoutes(app);
 
-  // Serve static files from the client build
-  const clientBuildPath = path.resolve(__dirname, '../client');
+  // Serve static files from the client build (only in production)
+  if (process.env.NODE_ENV === 'production') {
+    // When running from dist/server, we need to go up one level to reach dist/client
+    const clientBuildPath = path.resolve(__dirname, '../client');
+    
+    app.use(express.static(clientBuildPath));
 
-  app.use(express.static(clientBuildPath));
-
-  // For any route not handled by your API, serve index.html (for React Router)
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(clientBuildPath, 'index.html'));
-  });
+    // For any route not handled by your API, serve index.html (for React Router)
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(clientBuildPath, 'index.html'));
+    });
+  }
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

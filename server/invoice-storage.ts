@@ -916,7 +916,7 @@ export class MemStorage implements IStorage {
 }
 
 // Export the database storage implementation
-export const storage = new DatabaseStorage();
+export const storage = new QuotationStorage();
 
 // Initialize database with default data
 (async () => {
